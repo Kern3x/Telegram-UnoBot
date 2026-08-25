@@ -3,6 +3,7 @@
 A multiplayer UNO game for Telegram groups, implemented with pyTelegramBotAPI, SQLAlchemy, APScheduler, and Docker.
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+[![CI](https://github.com/Kern3x/Telegram-UnoBot/actions/workflows/ci.yml/badge.svg)](https://github.com/Kern3x/Telegram-UnoBot/actions/workflows/ci.yml)
 ![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4?logo=telegram&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.x-D71F00)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
@@ -29,6 +30,7 @@ Telegram UNO Bot brings a persistent multiplayer UNO experience into group chats
 - Group and global leaderboards
 - Docker deployment with persistent application data
 - Optional PostgreSQL configuration
+- Automated game-rule tests on Python 3.11 and 3.12
 
 ## Game Flow
 
@@ -82,10 +84,10 @@ Game rules are kept in the service layer, Telegram updates are handled by dedica
 
 ## Configuration
 
-Create a local `.env` file:
+Create a local `.env` file from the tracked example:
 
-```dotenv
-TOKEN=replace_with_your_telegram_bot_token
+```bash
+cp .env.example .env
 ```
 
 Optional configuration includes:
@@ -101,6 +103,19 @@ Optional configuration includes:
 | `REWARD_*_XP_RANGE` | Placement-based experience rewards |
 
 Never commit the real Telegram token or database credentials.
+
+## Tests
+
+The unit suite covers deck composition and dealing, card compatibility, turn
+effects, Wild Draw Four, grouped action cards, draw state, and the maximum-hand
+rule.
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+GitHub Actions runs the same suite on Python 3.11 and 3.12 for every push and
+pull request.
 
 ## Run Locally
 
@@ -141,7 +156,10 @@ The `bot-data` Docker volume preserves application data between container restar
 
 ```text
 .
+├── .github/workflows/ci.yml
+├── .env.example
 ├── app/
+├── tests/
 ├── config.py
 ├── Dockerfile
 ├── docker-compose.yml
