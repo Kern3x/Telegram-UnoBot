@@ -1,159 +1,151 @@
-# 🚀 Telegram SkeletonBot
+# Telegram UNO Bot
 
-A lightweight starter template for building Telegram bots with **pyTelegramBotAPI (TeleBot)**. It includes only the essentials: a clean structure, config loading, optional DB manager, Docker, and a place for your handlers.
+A multiplayer UNO game for Telegram groups, implemented with pyTelegramBotAPI, SQLAlchemy, APScheduler, and Docker.
+
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4?logo=telegram&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.x-D71F00)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+
+## Overview
+
+Telegram UNO Bot brings a persistent multiplayer UNO experience into group chats. Players join a lobby in the group, manage their hands through Telegram interactions, play standard action cards, and compete for coins, experience, levels, and leaderboard positions.
 
 ## Features
-- Minimal, readable project layout
-- Environment-based configuration via `.env`
-- Optional SQLAlchemy DB manager (engine/session + `create_tables()`)
-- Docker & Docker Compose setup
-- Ready-to-extend handlers module
+
+- Group-based game lobbies
+- Persistent games, groups, and player profiles
+- Standard number cards and action cards:
+  - Skip
+  - Reverse
+  - Draw Two
+  - Wild
+  - Wild Draw Four
+- Private hand interaction and sticker-based card moves
+- Turn timers and automatic timeout handling
+- Timed UNO declaration window and late-call penalty
+- Multi-card dump handling
+- Player rewards, experience, levels, and win tracking
+- Group and global leaderboards
+- Docker deployment with persistent application data
+- Optional PostgreSQL configuration
+
+## Game Flow
+
+1. Add the bot to a Telegram group.
+2. Run `/uno` to create or reopen the group lobby.
+3. Players join through the lobby controls.
+4. Start the match after the lobby is ready.
+5. Players select cards through the bot interface.
+6. The bot validates moves, advances turns, applies action cards, and manages timers.
+7. Final placements receive coins and experience.
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `/start` | Open the bot and initialize the player profile |
+| `/uno` | Create or display the UNO lobby in a group |
+| `/top10_coins` | Group leaderboard by coins |
+| `/top10_xp` | Group leaderboard by experience |
+| `/top_global_coins` | Global leaderboard by coins |
+| `/top_global_xp` | Global leaderboard by experience |
+
+## Architecture
+
+```text
+app/
+├── bot.py                  # Bot initialization and handler registration
+├── database/               # Database setup and repositories
+├── domain/entities/        # Card domain model
+├── handlers/
+│   ├── commands/           # Bot commands and lobby entry
+│   ├── message/            # Group and private message handling
+│   └── query/              # Lobby, hand, draw, color, and move callbacks
+├── models/                 # User, group, and game persistence models
+├── services/               # Deck, game, and reward rules
+├── utils/                  # Keyboards, card catalog, announcements, scheduler jobs
+└── workers/                # Turn and UNO timers
+```
+
+Game rules are kept in the service layer, Telegram updates are handled by dedicated handlers, and SQLAlchemy repositories persist game state separately from transport logic.
 
 ## Tech Stack
+
 - Python 3.11
-- pyTelegramBotAPI (TeleBot)
-- SQLAlchemy (optional)
-- Docker / Docker Compose
-- python-dotenv
-
-## Project Structure
-```
-.
-├─ app/
-│  ├─ database/
-│  │  ├─ __init__.py             # Exports DataController from init_db.py
-│  │  └─ init_db.py              # Class with universal CRUD methods
-│  ├─ handlers/
-│  │  ├─ commands/               # Directory with command handlers
-│  │  │   ├─ start.py            # Start command handler example
-│  │  │   └─ __init__.py         # Exports command handlers form "commands/" directory
-│  │  ├─ message/                # Directory with message handlers
-│  │  │   ├─ message_handler.py  # Message handler example
-│  │  │   └─ __init__.py         # Exports message handlers form "message/" directory
-│  │  ├─ query/                  # Directory with query handlers
-│  │  │   ├─ query_handler.py    # Query handler example
-│  │  │   └─ __init__.py         # Exports query handlers form "query/" directory
-│  │  └─ __init__.py             # Exports handlers from all directories in "handlers/"
-│  ├─ models/
-│  │  ├─ __init__.py             # (add your models here; sample below)
-│  │  └─ user.py                 # SQLAlchemy model example
-│  └─ utils/
-│  │   ├─ keryboards/            # Keyboards directory
-│  │   │   ├─ kb_classes/        # Keyboards class directory
-│  │   │   │   ├─ __init__.py    # Exports all keyboards
-│  │   │   │   └─ test_kbs.py    # Keyboard example
-│  │   │   ├─ __init__.py        # Exports Keyboards class from kb_initer.py
-│  │   │   └─ kb_initer.py       # Main class of Keyboards, which init all keyboards from "kb_classes/" directory 
-│  │   ├─ __init__.py            # Exports utilities (e.g., Keyboards)
-│  │   └─ db_manager.py          # SQLAlchemy engine/session + create_tables()
-│  └─ bot.py                     # TeleBot initialization, handler registration, start
-├─ config.py                     # Reads .env, base/dev configs
-├─ start_bot.py                  # Entry point (creates and runs the bot)
-├─ requirements.txt              # Dependencies
-├─ Dockerfile                    # Bot image
-└─ docker-compose.yml            # Bot + (optional) Postgres
-```
-
-> **Note:** Ensure `app/handlers/message.py` exists (or update `__init__.py` imports accordingly). Optionally add `app/utils/keyboards.py` if you plan to use custom keyboards.
-
-## Quick Start (Local)
-1. **Clone**
-   ```bash
-   git clone https://github.com/Kern3x/Telegram-SkeletonBot.git
-   cd Telegram-SkeletonBot
-   ```
-
-2. **Virtualenv & deps**
-   ```bash
-   python3.11 -m venv .venv
-   source .venv/bin/activate  # Windows: .venv\Scripts\activate
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-
-3. **Create `.env` in project root**
-   ```dotenv
-   TOKEN=123456:telegram-bot-token
-   # Optional DB:
-   POSTGRES_DB=botdb
-   POSTGRES_USER=botuser
-   POSTGRES_PASSWORD=botpass
-   # If running without Docker Compose, use a local DB URL or SQLite:
-   # DB_URL=sqlite:///./bot.db
-   # For Docker Compose (service name 'db'):
-   # DB_URL=postgresql+psycopg2://botuser:botpass@db:5432/botdb
-   ```
-
-4. **Run**
-   ```bash
-   python start_bot.py
-   ```
-
-## Quick Start (Docker)
-> Requires Docker & Docker Compose.
-
-1. Fill `.env` (see example above).
-2. Start services:
-   ```bash
-   docker compose up --build
-   ```
-   This builds the bot image and (optionally) brings up Postgres.
+- pyTelegramBotAPI
+- SQLAlchemy
+- APScheduler
+- Pillow
+- SQLite or PostgreSQL
+- Docker Compose
 
 ## Configuration
-- `config.py` reads `.env` and exposes the base config with:
-  - `BOT_TOKEN` — bot token (`TOKEN` in `.env`)
-  - `DB_URL` — database URL (optional)
-- You can add an `ENV` variable (e.g., `development` / `production`) and switch configs accordingly.
 
-## Add Your First Handler
-Create `app/handlers/message/message.py`:
-```python
-# app/handlers/message/message.py
-from telebot.types import Message
+Create a local `.env` file:
 
-class TestMessageHandler:
-    def __init__(self, bot):
-        self.bot = bot
-
-        @self.bot.message_handler(commands=["start"])
-        def handle_start(msg: Message):
-            self.bot.reply_to(msg, "Hello! I'm alive ✅")
-
-        @self.bot.message_handler(func=lambda m: True)
-        def echo(msg: Message):
-            self.bot.reply_to(msg, f"You wrote: {msg.text}")
+```dotenv
+TOKEN=replace_with_your_telegram_bot_token
 ```
 
-The bot already imports and registers this handler in `app/bot.py` (via `handlers.__init__`).
+Optional configuration includes:
 
-## Entry Point
-`start_bot.py` is a tiny launcher:
-```python
-from app.bot import TelegramBot
+| Variable | Purpose |
+| --- | --- |
+| `DB_URL` / `DATABASE_URL` | SQLAlchemy database connection |
+| `TURN_SECONDS` | Maximum duration of a player turn |
+| `UNO_SECONDS` | UNO declaration window |
+| `STICKER_SET_NAME` | Telegram sticker set used for cards |
+| `ADD_GROUP_BOT_URL` | Link used to add the bot to a group |
+| `REWARD_*_COINS_RANGE` | Placement-based coin rewards |
+| `REWARD_*_XP_RANGE` | Placement-based experience rewards |
 
-bot = TelegramBot()
-bot.start()
+Never commit the real Telegram token or database credentials.
+
+## Run Locally
+
+```bash
+git clone https://github.com/Kern3x/Telegram-UnoBot.git
+cd Telegram-UnoBot
+
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+python start_bot.py
 ```
 
-## Database
-- `app/utils/db_manager.py` provides a basic SQLAlchemy setup.
-- `create_tables()` will call `Base.metadata.create_all(engine)`.
-- Add your ORM models and make sure they inherit from the shared `Base`.
+## Run with Docker
 
-## Logging & Production Notes
-- Consider adding Python `logging` and graceful shutdown (SIGTERM/SIGINT) handling.
-- For higher scale, prefer **Webhook** over **polling**.
-- If using Alpine-based images with `psycopg2-binary` or other C extensions, you might need extra system packages.
+After creating `.env`:
 
-## Requirements (example)
-Adjust `requirements.txt` to your needs. A minimal set:
-```txt
-pyTelegramBotAPI
-python-dotenv
-SQLAlchemy
-psycopg2-binary    # if you use Postgres
+```bash
+docker compose up --build -d
 ```
 
-## Roadmap / TODO
-- [ ] pytest scaffolding
-- [ ] GitHub Actions (lint/test/build)
+View logs:
+
+```bash
+docker compose logs -f bot
+```
+
+Stop the bot:
+
+```bash
+docker compose down
+```
+
+The `bot-data` Docker volume preserves application data between container restarts.
+
+## Repository Structure
+
+```text
+.
+├── app/
+├── config.py
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── start_bot.py
+└── README.md
+```
